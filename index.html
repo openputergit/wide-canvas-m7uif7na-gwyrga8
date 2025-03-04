@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Attendance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff;
+        }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <div class="min-h-screen">
+        <nav class="bg-blue-600 text-white p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">BlockChain Attendance System</h1>
+                <div class="flex space-x-4">
+                    <button onclick="showSection('students')" class="hover:bg-blue-700 px-3 py-2 rounded">Students</button>
+                    <button onclick="showSection('subjects')" class="hover:bg-blue-700 px-3 py-2 rounded">Subjects</button>
+                    <button onclick="showSection('timetable')" class="hover:bg-blue-700 px-3 py-2 rounded">Timetable</button>
+                    <button onclick="showSection('attendance')" class="hover:bg-blue-700 px-3 py-2 rounded">Attendance</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="container mx-auto p-4">
+            <!-- Students Section -->
+            <section id="students" class="section">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4">Student Management</h2>
+                    <form id="studentForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" placeholder="Student Name" id="studentName" class="border p-2 rounded" required>
+                            <input type="text" placeholder="Roll Number" id="studentRoll" class="border p-2 rounded" required>
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Student</button>
+                    </form>
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold mb-3">Student List</h3>
+                        <div id="studentList" class="space-y-2"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Subjects Section -->
+            <section id="subjects" class="section hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4">Subject Management</h2>
+                    <form id="subjectForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" placeholder="Subject Name" id="subjectName" class="border p-2 rounded" required>
+                            <input type="text" placeholder="Subject Code" id="subjectCode" class="border p-2 rounded" required>
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Subject</button>
+                    </form>
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold mb-3">Subject List</h3>
+                        <div id="subjectList" class="space-y-2"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Timetable Section -->
+            <section id="timetable" class="section hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4">Timetable Management</h2>
+                    <form id="timetableForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <select id="timetableDay" class="border p-2 rounded" required>
+                                <option value="">Select Day</option>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                            </select>
+                            <input type="time" id="timetableTime" class="border p-2 rounded" required>
+                            <select id="timetableSubject" class="border p-2 rounded" required>
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Schedule</button>
+                    </form>
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold mb-3">Current Timetable</h3>
+                        <div id="timetableList" class="space-y-2"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Attendance Section -->
+            <section id="attendance" class="section hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4">Mark Attendance</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <input type="date" id="attendanceDate" class="border p-2 rounded" required>
+                        <select id="attendanceSubject" class="border p-2 rounded" required>
+                            <option value="">Select Subject</option>
+                        </select>
+                    </div>
+                    <div id="attendanceList" class="space-y-4"></div>
+                    <button onclick="submitAttendance()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit Attendance</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Data Storage
+        let students = [];
+        let subjects = [];
+        let timetable = [];
+        let attendance = [];
+
+        // Show/Hide Sections
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+
+        // Student Management
+        document.getElementById('studentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('studentName').value;
+            const roll = document.getElementById('studentRoll').value;
+            
+            students.push({ name, roll });
+            updateStudentList();
+            this.reset();
+        });
+
+        function updateStudentList() {
+            const list = document.getElementById('studentList');
+            list.innerHTML = students.map(student => `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded">
+                    <span>${student.name} (${student.roll})</span>
+                    <button onclick="deleteStudent('${student.roll}')" class="text-red-600 hover:text-red-800">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function deleteStudent(roll) {
+            students = students.filter(s => s.roll !== roll);
+            updateStudentList();
+        }
+
+        // Subject Management
+        document.getElementById('subjectForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('subjectName').value;
+            const code = document.getElementById('subjectCode').value;
+            
+            subjects.push({ name, code });
+            updateSubjectList();
+            updateSubjectDropdowns();
+            this.reset();
+        });
+
+        function updateSubjectList() {
+            const list = document.getElementById('subjectList');
+            list.innerHTML = subjects.map(subject => `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded">
+                    <span>${subject.name} (${subject.code})</span>
+                    <button onclick="deleteSubject('${subject.code}')" class="text-red-600 hover:text-red-800">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateSubjectDropdowns() {
+            const dropdowns = ['timetableSubject', 'attendanceSubject'];
+            dropdowns.forEach(id => {
+                const dropdown = document.getElementById(id);
+                dropdown.innerHTML = '<option value="">Select Subject</option>' +
+                    subjects.map(subject => `
+                        <option value="${subject.code}">${subject.name}</option>
+                    `).join('');
+            });
+        }
+
+        function deleteSubject(code) {
+            subjects = subjects.filter(s => s.code !== code);
+            updateSubjectList();
+            updateSubjectDropdowns();
+        }
+
+        // Timetable Management
+        document.getElementById('timetableForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const day = document.getElementById('timetableDay').value;
+            const time = document.getElementById('timetableTime').value;
+            const subjectCode = document.getElementById('timetableSubject').value;
+            
+            timetable.push({ day, time, subjectCode });
+            updateTimetableList();
+            this.reset();
+        });
+
+        function updateTimetableList() {
+            const list = document.getElementById('timetableList');
+            timetable.sort((a, b) => a.day.localeCompare(b.day) || a.time.localeCompare(b.time));
+            list.innerHTML = timetable.map(schedule => `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded">
+                    <span>${schedule.day} at ${schedule.time} - ${subjects.find(s => s.code === schedule.subjectCode)?.name}</span>
+                    <button onclick="deleteTimetable('${schedule.day}','${schedule.time}')" class="text-red-600 hover:text-red-800">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function deleteTimetable(day, time) {
+            timetable = timetable.filter(t => t.day !== day || t.time !== time);
+            updateTimetableList();
+        }
+
+        // Attendance Management
+        document.getElementById('attendanceDate').addEventListener('change', updateAttendanceList);
+        document.getElementById('attendanceSubject').addEventListener('change', updateAttendanceList);
+
+        function updateAttendanceList() {
+            const date = document.getElementById('attendanceDate').value;
+            const subjectCode = document.getElementById('attendanceSubject').value;
+            
+            if (!date || !subjectCode) return;
+
+            const list = document.getElementById('attendanceList');
+            list.innerHTML = students.map(student => {
+                const existing = attendance.find(a => 
+                    a.date === date && 
+                    a.subjectCode === subjectCode && 
+                    a.studentRoll === student.roll
+                );
+                
+                return `
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded">
+                        <span>${student.name} (${student.roll})</span>
+                        <div class="space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="attendance_${student.roll}" value="present" 
+                                    ${existing?.status === 'present' ? 'checked' : ''} class="form-radio text-blue-600">
+                                <span class="ml-2">Present</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="attendance_${student.roll}" value="absent"
+                                    ${existing?.status === 'absent' ? 'checked' : ''} class="form-radio text-red-600">
+                                <span class="ml-2">Absent</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function submitAttendance() {
+            const date = document.getElementById('attendanceDate').value;
+            const subjectCode = document.getElementById('attendanceSubject').value;
+            
+            if (!date || !subjectCode) {
+                alert('Please select date and subject');
+                return;
+            }
+
+            const loading = document.querySelector('.loading');
+            loading.style.display = 'block';
+
+            try {
+                // Remove old attendance records for this date and subject
+                attendance = attendance.filter(a => 
+                    a.date !== date || a.subjectCode !== subjectCode
+                );
+
+                // Add new attendance records
+                students.forEach(student => {
+                    const status = document.querySelector(`input[name="attendance_${student.roll}"]:checked`)?.value;
+                    if (status) {
+                        attendance.push({
+                            date,
+                            subjectCode,
+                            studentRoll: student.roll,
+                            status
+                        });
+                    }
+                });
+
+                // Store in blockchain (using Moralis API)
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/moralis/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 8nycMcITqobmknYVzPW3S35d1y72',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        date,
+                        subjectCode,
+                        attendance: attendance.filter(a => 
+                            a.date === date && a.subjectCode === subjectCode
+                        )
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Attendance submitted successfully!');
+                } else {
+                    throw new Error('Failed to submit attendance');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to submit attendance. Please try again.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Initialize
+        showSection('students');
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
